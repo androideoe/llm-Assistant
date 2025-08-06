@@ -30,6 +30,133 @@
             .transition-height { transition: max-height 0.3s ease-out; }
             .shadow-soft { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); }
         }
+        
+        /* Loading动画样式 */
+        .loading-dots {
+            display: inline-block;
+        }
+        
+        .loading-dots::after {
+            content: '';
+            animation: loading-dots 1.5s infinite;
+        }
+        
+        @keyframes loading-dots {
+            0%, 20% {
+                content: '';
+            }
+            40% {
+                content: '.';
+            }
+            60% {
+                content: '..';
+            }
+            80%, 100% {
+                content: '...';
+            }
+        }
+        
+        /* 脉冲动画 */
+        .pulse-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #6B7280;
+            animation: pulse-dot 1.4s ease-in-out infinite both;
+        }
+        
+        .pulse-dot:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+        
+        .pulse-dot:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+        
+        @keyframes pulse-dot {
+            0%, 80%, 100% {
+                transform: scale(0);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        /* 新的loading动画 - 几个点来回放大缩小 */
+        .loading-dots-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+        
+        .loading-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: #6B7280;
+            animation: loading-dot-scale 1.2s ease-in-out infinite;
+        }
+        
+        .loading-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+        
+        .loading-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        
+        .loading-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        
+        @keyframes loading-dot-scale {
+            0%, 100% {
+                transform: scale(0.3);
+                opacity: 0.3;
+            }
+            50% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        /* 代码块样式 */
+        .code-block {
+            background-color: #f8f9fa;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            overflow-x: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .code-inline {
+            background-color: #f3f4f6;
+            padding: 0.2em 0.4em;
+            border-radius: 0.25rem;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.875em;
+        }
+        
+        /* 确保代码块内的换行和缩进正确显示 */
+        pre {
+            white-space: pre-wrap !important;
+            word-wrap: break-word !important;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+        }
+        
+        code {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
@@ -204,8 +331,42 @@
         if (msg.role === 'user') {
             return `<div class="flex justify-end"><div class="max-w-xl bg-primary text-white rounded-lg px-4 py-2 mb-2 shadow">${escapeHtml(msg.content)}</div></div>`;
         } else {
-            // 使用marked渲染markdown
-            return `<div class="flex justify-start"><div class="max-w-xl bg-white border border-gray-200 text-gray-800 rounded-lg px-4 py-2 mb-2 shadow prose prose-sm prose-zinc">${marked.parse(msg.content)}</div></div>`;
+            // 检查是否为loading状态
+            if (msg.content === '...' || msg.content === 'loading') {
+                return `<div class="flex justify-start">
+                    <div class="max-w-2xl bg-white border border-gray-200 text-gray-800 rounded-lg px-4 py-2 mb-2 shadow" style="max-width: 50vw;">
+                        <div class="loading-dots-container">
+                            <div class="loading-dot"></div>
+                            <div class="loading-dot"></div>
+                            <div class="loading-dot"></div>
+                        </div>
+                    </div>
+                </div>`;
+            } else {
+                // 配置marked选项以更好地处理代码块
+                marked.setOptions({
+                    breaks: true,
+                    gfm: true,
+                    highlight: function(code, lang) {
+                        // 为代码块添加语法高亮样式
+                        return `<pre class="bg-gray-100 p-3 rounded-md overflow-x-auto text-sm font-mono"><code class="language-${lang || 'text'}">${escapeHtml(code)}</code></pre>`;
+                    }
+                });
+                
+                // 使用marked渲染markdown，并添加自定义样式
+                const rendered = marked.parse(msg.content);
+                return `<div class="flex justify-start">
+                    <div class="max-w-2xl bg-white border border-gray-200 text-gray-800 rounded-lg px-4 py-2 mb-2 shadow prose prose-sm prose-zinc max-w-none" style="max-width: 50vw;">
+                        <style>
+                            .prose pre { margin: 0.5em 0; }
+                            .prose code { background-color: #f3f4f6; padding: 0.2em 0.4em; border-radius: 0.25rem; font-size: 0.875em; }
+                            .prose pre code { background-color: transparent; padding: 0; }
+                            .prose pre { background-color: #f8f9fa; border: 1px solid #e5e7eb; }
+                        </style>
+                        ${rendered}
+                    </div>
+                </div>`;
+            }
         }
     }
     function escapeHtml(text) {
@@ -213,6 +374,104 @@
     }
 
     // ========== 发送消息 ==========
+    
+    // 文本格式化函数
+    function formatStreamingText(text) {
+        if (!text) return text;
+        
+        let formatted = text;
+        
+        // 1. 处理代码块 - 保持代码块的原始格式
+        // 匹配 ```language 和 ``` 之间的代码块
+        formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g, function(match, lang, code) {
+            // 保持代码块内的原始格式，只处理基本的换行
+            return '```' + (lang || '') + '\n' + code.trim() + '\n```';
+        });
+        
+        // 2. 处理行内代码 - 保持原始格式
+        formatted = formatted.replace(/`([^`]+)`/g, function(match, code) {
+            return '`' + code + '`';
+        });
+        
+        // 3. 处理标题：确保标题单独一行
+        // 匹配 "作为Android开发者，您需要具备以下关键技能：" 这样的标题格式
+        formatted = formatted.replace(/([^。！？\n]+：)(\s*)(\d+\.)/g, '$1\n$3');
+        
+        // 4. 处理列表项：确保每个序号项目单独一行
+        // 匹配 "1.Java或Kotlin程序MING语言的基础知识。" 这样的列表项
+        formatted = formatted.replace(/(\d+\.)([^。！？\n]+[。！？])/g, function(match, number, content) {
+            // 检查前面是否有换行符
+            const beforeMatch = formatted.substring(0, formatted.indexOf(match));
+            if (beforeMatch && !beforeMatch.endsWith('\n')) {
+                return '\n' + match;
+            }
+            return match;
+        });
+        
+        // 5. 处理连续的序号项目，确保它们之间有换行
+        formatted = formatted.replace(/(\d+\.)([^。！？\n]+[。！？])(\s*)(\d+\.)/g, '$1$2\n$4');
+        
+        // 6. 确保段落之间有适当的空行
+        formatted = formatted.replace(/([。！？])\s*(\d+\.)/g, '$1\n\n$2');
+        
+        // 7. 处理特殊情况：如果标题后面直接跟序号，确保换行
+        formatted = formatted.replace(/(：)\s*(\d+\.)/g, '$1\n$2');
+        
+        // 8. 处理代码中的常见格式问题
+        // 修复Java代码中的常见问题
+        formatted = formatted.replace(/publicclass/g, 'public class');
+        formatted = formatted.replace(/publicstatic/g, 'public static');
+        formatted = formatted.replace(/publicstaticvoid/g, 'public static void');
+        formatted = formatted.replace(/int\[\]/g, 'int[]');
+        formatted = formatted.replace(/for\(/g, 'for (');
+        formatted = formatted.replace(/if\(/g, 'if (');
+        formatted = formatted.replace(/\)\{/g, ') {');
+        formatted = formatted.replace(/;\s*for/g, ';\nfor');
+        formatted = formatted.replace(/;\s*if/g, ';\nif');
+        formatted = formatted.replace(/;\s*}/g, ';\n}');
+        formatted = formatted.replace(/}\s*for/g, '}\nfor');
+        formatted = formatted.replace(/}\s*if/g, '}\nif');
+        
+        // 9. 智能代码格式化 - 处理更多Java代码格式问题
+        // 修复类名和方法名之间的空格
+        formatted = formatted.replace(/([a-zA-Z])([A-Z][a-zA-Z]*)/g, function(match, first, rest) {
+            // 避免在代码块内过度处理
+            if (match.includes('class') || match.includes('public') || match.includes('static') || match.includes('void')) {
+                return match;
+            }
+            return first + ' ' + rest;
+        });
+        
+        // 修复方法调用和参数之间的空格
+        formatted = formatted.replace(/([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g, '$1 (');
+        
+        // 修复数组访问的格式
+        formatted = formatted.replace(/\[\s*([^\]]+)\s*\]/g, '[$1]');
+        
+        // 修复分号后的换行
+        formatted = formatted.replace(/;\s*([a-zA-Z])/g, ';\n$1');
+        
+        // 修复大括号的格式
+        formatted = formatted.replace(/\{\s*([^}]+)\s*\}/g, '{\n$1\n}');
+        
+        // 修复缩进 - 为代码块内的内容添加适当的缩进
+        formatted = formatted.replace(/```(\w+)?\n([\s\S]*?)```/g, function(match, lang, code) {
+            // 为代码块内的每一行添加适当的缩进
+            const lines = code.split('\n');
+            const indentedLines = lines.map(line => {
+                // 保持原有的缩进，但确保基本的格式化
+                return line.trim() ? '    ' + line.trim() : line;
+            });
+            return '```' + (lang || '') + '\n' + indentedLines.join('\n') + '\n```';
+        });
+        
+        // 10. 确保代码块前后有适当的空行
+        formatted = formatted.replace(/([^`\n])\n```/g, '$1\n\n```');
+        formatted = formatted.replace(/```\n([^`\n])/g, '```\n\n$1');
+        
+        return formatted;
+    }
+    
     async function handleSendMessage() {
         const message = userMessageInput.value.trim();
         if (!message) {
@@ -240,29 +499,108 @@
         userMessageInput.value = '';
         userMessageInput.focus();
         saveSessions();
+        
         // 追加助手loading气泡
-        chatData[currentSessionId].push({ role: 'assistant', content: '...' });
+        chatData[currentSessionId].push({ role: 'assistant', content: 'loading' });
         renderChat();
-        // 请求API
+        
+        // 使用流式响应
         try {
-            const resp = await fetch(`${apiBaseUrl}/api/chat`, {
+            const response = await fetch(`${apiBaseUrl}/api/chat/stream`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message,
                     system_prompt: '你是一个 helpful 的助手。请用简洁明了的语言回答用户的问题。',
-                    stream: false,
+                    stream: true,
                     session_id: currentSessionId
                 })
             });
-            const data = await resp.json();
-            // 替换最后一个assistant气泡内容
-            chatData[currentSessionId][chatData[currentSessionId].length - 1].content = data.response || '[无响应]';
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let fullResponse = '';
+            let buffer = '';
+
+            // 替换loading状态为开始流式显示
+            chatData[currentSessionId][chatData[currentSessionId].length - 1].content = '';
+            renderChat();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                
+                if (done) {
+                    break;
+                }
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                
+                // 保留最后一行（可能不完整）
+                buffer = lines.pop() || '';
+                
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6).trim();
+                        
+                        if (data === '' || data === '[DONE]') {
+                            continue;
+                        }
+                        
+                        try {
+                            // 尝试解析为JSON事件
+                            if (data.startsWith('{')) {
+                                const eventData = JSON.parse(data);
+                                if (eventData.event === 'end') {
+                                    break;
+                                }
+                                if (eventData.event === 'error') {
+                                    throw new Error(eventData.data || '流式响应出错');
+                                }
+                                // 如果是message事件，使用data字段
+                                if (eventData.event === 'message' && eventData.data) {
+                                    fullResponse += eventData.data;
+                                }
+                            } else {
+                                // 纯文本数据
+                                fullResponse += data;
+                            }
+                            
+                            // 实时更新显示内容
+                            chatData[currentSessionId][chatData[currentSessionId].length - 1].content = formatStreamingText(fullResponse);
+                            renderChat();
+                            
+                            // 滚动到底部
+                            setTimeout(() => {
+                                chatContainer.scrollTop = chatContainer.scrollHeight;
+                            }, 10);
+                            
+                        } catch (parseError) {
+                            console.warn('解析流式数据时出错:', parseError);
+                            // 如果不是JSON，当作纯文本处理
+                            if (!data.startsWith('{')) {
+                                fullResponse += data;
+                                chatData[currentSessionId][chatData[currentSessionId].length - 1].content = formatStreamingText(fullResponse);
+                                renderChat();
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 确保最终内容被保存
+            chatData[currentSessionId][chatData[currentSessionId].length - 1].content = formatStreamingText(fullResponse) || '[无响应]';
             renderChat();
             saveSessions();
             renderSessionList(); // 及时刷新会话名
+            
         } catch (e) {
-            chatData[currentSessionId][chatData[currentSessionId].length - 1].content = '[助手响应失败]';
+            console.error('流式请求失败:', e);
+            chatData[currentSessionId][chatData[currentSessionId].length - 1].content = `[助手响应失败: ${e.message}]`;
             renderChat();
             saveSessions();
         }
