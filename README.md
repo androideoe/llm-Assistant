@@ -6,6 +6,4 @@
 - 支持多轮对话
 - 支持管理历史会话
 
-![preview1.webp](https://s4.ezgif.com/tmp/ezgif-4e39f3f03c6264.webp)<br/>
-
-![preview2.webp](https://s4.ezgif.com/tmp/ezgif-4da37c75460f5c.webp)<br/>
+![preview1.webp](https://s7.ezgif.com/tmp/ezgif-7c23410d2652e8.gif)<br/>
