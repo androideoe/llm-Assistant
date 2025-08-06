@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama Llama3.2 聊天助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        neutral: '#1F2937',
+                        'neutral-light': '#F3F4F6',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto { content-visibility: auto; }
+            .transition-height { transition: max-height 0.3s ease-out; }
+            .shadow-soft { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen font-sans">
+    <div class="flex h-screen">
+        <!-- 左侧会话栏 -->
+        <aside class="w-80 bg-white border-r flex flex-col">
+            <div class="flex items-center px-6 py-5 border-b">
+                <img src="https://api.dicebear.com/7.x/bottts/svg?seed=chat" class="w-10 h-10 rounded-full mr-3" alt="avatar">
+                <span class="text-xl font-bold text-neutral">小P助手</span>
+            </div>
+            <div class="flex-1 overflow-y-auto">
+                <div class="px-4 py-3">
+                    <button id="btn-new-session" class="w-full flex items-center justify-center px-3 py-2 mb-4 rounded bg-primary text-white font-medium hover:bg-primary/90 transition">
+                        <i class="fa fa-plus mr-2"></i>新建会话
+                    </button>
+                    <div class="text-xs text-gray-400 mb-2">历史会话</div>
+                    <div id="session-list" class="space-y-2">
+                        <!-- 会话列表项 -->
+                    </div>
+                </div>
+            </div>
+            <div class="px-4 py-3 border-t text-xs text-gray-400">
+                Ollama Llama3.2 API测试工具 &copy; 2023
+            </div>
+        </aside>
+        <!-- 右侧主内容区 -->
+        <main class="flex-1 flex flex-col h-full">
+            <!-- 顶部导航 -->
+            <header class="bg-white shadow-sm sticky top-0 z-10 flex items-center justify-between px-8 py-4 border-b">
+                <div class="flex items-center space-x-2">
+                    <i class="fa fa-rocket text-primary text-2xl"></i>
+                    <h1 class="text-xl font-bold text-neutral">Ollama Llama3.2 聊天助手</h1>
+                </div>
+                <span id="api-status" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                    <i class="fa fa-circle mr-1"></i>未连接
+                </span>
+            </header>
+            <!-- 会话内容区 -->
+            <section class="flex-1 flex flex-col overflow-hidden">
+                <div id="chat-container" class="flex-1 overflow-y-auto px-8 py-6 space-y-4 bg-neutral-light">
+                    <!-- 聊天气泡 -->
+                </div>
+                <!-- 输入区 -->
+                <div class="bg-white px-8 py-4 border-t flex items-end gap-3">
+                    <textarea id="user-message" rows="2" class="flex-1 resize-none px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" placeholder="请输入你想发送给模型的消息..."></textarea>
+                    <button id="btn-send-message" class="inline-flex items-center px-5 py-2 rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all">
+                        <i class="fa fa-paper-plane mr-2"></i>发送
+                    </button>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script>
+    // ========== 会话和多轮对话管理 ==========
+    const apiBaseUrl = 'http://localhost:8000';
+    let sessions = [];
+    let currentSessionId = null;
+    let chatData = {}; // { sessionId: [ {role, content} ] }
+
+    // DOM元素
+    const sessionList = document.getElementById('session-list');
+    const chatContainer = document.getElementById('chat-container');
+    const userMessageInput = document.getElementById('user-message');
+    const btnSendMessage = document.getElementById('btn-send-message');
+    const btnNewSession = document.getElementById('btn-new-session');
+    const apiStatusIndicator = document.getElementById('api-status');
+
+    // 初始化
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadSessions();
+        // 不再自动新建空会话，只有有历史或用户输入才有会话
+        if (currentSessionId && sessions.length > 0) {
+            switchSession(currentSessionId || sessions[0].id);
+        }
+        bindEvents();
+        checkApiConnection();
+    });
+
+    function bindEvents() {
+        btnSendMessage.addEventListener('click', handleSendMessage);
+        btnNewSession.addEventListener('click', handleNewSession);
+        userMessageInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage();
+            }
+        });
+    }
+
+    // ========== 会话管理 ==========
+    async function loadSessions() {
+        // 本地存储模拟会话列表
+        sessions = JSON.parse(localStorage.getItem('chatSessions') || '[]');
+        chatData = JSON.parse(localStorage.getItem('chatData') || '{}');
+        renderSessionList();
+    }
+    function saveSessions() {
+        localStorage.setItem('chatSessions', JSON.stringify(sessions));
+        localStorage.setItem('chatData', JSON.stringify(chatData));
+    }
+    function renderSessionList() {
+        sessionList.innerHTML = '';
+        if (sessions.length === 0) {
+            sessionList.innerHTML = '<div class="text-gray-400 text-center py-8">暂无会话</div>';
+            return;
+        }
+        sessions.forEach(sess => {
+            // 用第一条用户消息作为会话名，超长打点
+            let title = sess.title;
+            if (!title && chatData[sess.id] && chatData[sess.id].length > 0) {
+                const firstUserMsg = chatData[sess.id].find(m => m.role === 'user');
+                if (firstUserMsg) {
+                    title = firstUserMsg.content;
+                }
+            }
+            if (!title) title = '未命名会话';
+            if (title.length > 16) title = title.slice(0, 15) + '...';
+            const active = sess.id === currentSessionId ? 'bg-primary/10 border-primary text-primary' : 'bg-gray-50 hover:bg-primary/5';
+            sessionList.innerHTML += `
+                <div class="flex items-center justify-between px-3 py-2 rounded border cursor-pointer ${active} transition" onclick="switchSession('${sess.id}')">
+                    <span class="truncate" title="${title}">${title}</span>
+                    <i class="fa fa-trash text-gray-300 hover:text-red-400 ml-2" onclick="event.stopPropagation();deleteSession('${sess.id}')"></i>
+                </div>
+            `;
+        });
+    }
+    window.switchSession = function(id) {
+        currentSessionId = id;
+        renderSessionList();
+        renderChat();
+    }
+    window.deleteSession = function(id) {
+        sessions = sessions.filter(s => s.id !== id);
+        delete chatData[id];
+        if (currentSessionId === id) {
+            currentSessionId = sessions.length > 0 ? sessions[0].id : null;
+        }
+        saveSessions();
+        renderSessionList();
+        renderChat();
+    }
+    async function handleNewSession() {
+        const newId = 'sess_' + Date.now();
+        // 初始title为空，后续用第一条消息内容命名
+        sessions.unshift({ id: newId, title: '' });
+        chatData[newId] = [];
+        currentSessionId = newId;
+        saveSessions();
+        renderSessionList();
+        renderChat();
+        userMessageInput.value = '';
+        userMessageInput.focus();
+    }
+
+    // ========== 聊天渲染 ==========
+    function renderChat() {
+        chatContainer.innerHTML = '';
+        if (!currentSessionId || !chatData[currentSessionId] || chatData[currentSessionId].length === 0) {
+            chatContainer.innerHTML = '<div class="text-gray-400 text-center py-16">暂无对话，快来发送消息吧！</div>';
+            return;
+        }
+        chatData[currentSessionId].forEach(msg => {
+            chatContainer.innerHTML += renderBubble(msg);
+        });
+        // 滚动到底部
+        setTimeout(() => {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }, 100);
+    }
+    function renderBubble(msg) {
+        if (msg.role === 'user') {
+            return `<div class="flex justify-end"><div class="max-w-xl bg-primary text-white rounded-lg px-4 py-2 mb-2 shadow">${escapeHtml(msg.content)}</div></div>`;
+        } else {
+            // 使用marked渲染markdown
+            return `<div class="flex justify-start"><div class="max-w-xl bg-white border border-gray-200 text-gray-800 rounded-lg px-4 py-2 mb-2 shadow prose prose-sm prose-zinc">${marked.parse(msg.content)}</div></div>`;
+        }
+    }
+    function escapeHtml(text) {
+        return text.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    }
+
+    // ========== 发送消息 ==========
+    async function handleSendMessage() {
+        const message = userMessageInput.value.trim();
+        if (!message) {
+            userMessageInput.classList.add('border-red-400');
+            userMessageInput.placeholder = '请输入内容后再发送';
+            setTimeout(() => {
+                userMessageInput.classList.remove('border-red-400');
+                userMessageInput.placeholder = '请输入你想发送给模型的消息...';
+            }, 1500);
+            return;
+        }
+        // 如果没有会话，首次输入时新建会话
+        if (!currentSessionId) {
+            await handleNewSession();
+        }
+        // 追加用户消息
+        chatData[currentSessionId] = chatData[currentSessionId] || [];
+        chatData[currentSessionId].push({ role: 'user', content: message });
+        // 如果会话title为空，则用第一条消息命名
+        const sess = sessions.find(s => s.id === currentSessionId);
+        if (sess && !sess.title) {
+            sess.title = message;
+        }
+        renderChat();
+        userMessageInput.value = '';
+        userMessageInput.focus();
+        saveSessions();
+        // 追加助手loading气泡
+        chatData[currentSessionId].push({ role: 'assistant', content: '...' });
+        renderChat();
+        // 请求API
+        try {
+            const resp = await fetch(`${apiBaseUrl}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message,
+                    system_prompt: '你是一个 helpful 的助手。请用简洁明了的语言回答用户的问题。',
+                    stream: false,
+                    session_id: currentSessionId
+                })
+            });
+            const data = await resp.json();
+            // 替换最后一个assistant气泡内容
+            chatData[currentSessionId][chatData[currentSessionId].length - 1].content = data.response || '[无响应]';
+            renderChat();
+            saveSessions();
+            renderSessionList(); // 及时刷新会话名
+        } catch (e) {
+            chatData[currentSessionId][chatData[currentSessionId].length - 1].content = '[助手响应失败]';
+            renderChat();
+            saveSessions();
+        }
+    }
+
+    // ========== API健康检查 ==========
+    async function checkApiConnection() {
+        try {
+            const resp = await fetch(`${apiBaseUrl}/api/health`);
+            const data = await resp.json();
+            if (data.status === 'healthy') {
+                apiStatusIndicator.innerHTML = '<i class="fa fa-circle mr-1"></i>已连接';
+                apiStatusIndicator.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
+            } else {
+                apiStatusIndicator.innerHTML = '<i class="fa fa-circle mr-1"></i>未连接';
+                apiStatusIndicator.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
+            }
+        } catch {
+            apiStatusIndicator.innerHTML = '<i class="fa fa-circle mr-1"></i>未连接';
+            apiStatusIndicator.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
+        }
+    }
+    </script>
+</body>
+</html>
