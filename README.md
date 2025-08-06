@@ -1,4 +1,4 @@
-<img width="1920" height="886" alt="image" src="https://github.com/user-attachments/assets/3550b83d-f57a-41c3-ba53-e8722115994c" /># 基于Ollama与LangChain的本地聊天助手实现
+# 基于Ollama与LangChain的本地聊天助手实现
 
 通过Ollama部署Llama3.2本地大模型，并结合LangChain框架调用该模型，实现了一款聊天助手（小P助手），其主要功能如下：
 
