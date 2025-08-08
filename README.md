@@ -1,6 +1,7 @@
 # Llama3.2 RAG 聊天助手
 
 这是一个基于Ollama和LangChain的智能聊天助手，支持RAG（检索增强生成）功能，通过关联本地知识库进行智能问答。
+![image](https://github.com/androideoe/llm-Assistant/blob/main/screenshot.png)
 
 ## 功能特性
 
