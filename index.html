@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ollama Llama3.2 聊天助手</title>
+    <title>Ollama 多模型聊天助手</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script>
@@ -157,6 +157,203 @@
         code {
             font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
         }
+
+        /* 思考过程样式 - 支持流式输出 */
+        .thinking-container {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #0ea5e9;
+            border-radius: 8px;
+            margin: 8px 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .thinking-header {
+            background: linear-gradient(90deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+            padding: 8px 12px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .thinking-header:hover {
+            background: linear-gradient(90deg, #0284c7 0%, #0369a1 100%);
+        }
+        
+        .thinking-content {
+            padding: 12px;
+            font-size: 0.875rem;
+            line-height: 1.6;
+            color: #1e40af;
+            background: white;
+            border-top: 1px solid #bfdbfe;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .thinking-content.collapsed {
+            display: none;
+        }
+        
+        .thinking-content.streaming {
+            border-right: 2px solid #0ea5e9;
+            animation: thinking-cursor 1s infinite;
+        }
+        
+        @keyframes thinking-cursor {
+            0%, 50% { border-right-color: #0ea5e9; }
+            51%, 100% { border-right-color: transparent; }
+        }
+        
+        .thinking-toggle {
+            transition: transform 0.3s ease;
+        }
+        
+        .thinking-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+        
+        .thinking-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .thinking-dots {
+            display: inline-flex;
+            gap: 2px;
+        }
+        
+        .thinking-dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: #bfdbfe;
+            animation: thinking-pulse 1.4s ease-in-out infinite both;
+        }
+        
+        .thinking-dot:nth-child(1) { animation-delay: -0.32s; }
+        .thinking-dot:nth-child(2) { animation-delay: -0.16s; }
+        .thinking-dot:nth-child(3) { animation-delay: 0s; }
+        
+        @keyframes thinking-pulse {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        /* Qwen3模型特定样式 */
+        .qwen-thinking .thinking-container {
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-color: #10b981;
+        }
+        
+        .qwen-thinking .thinking-header {
+            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+        }
+        
+        .qwen-thinking .thinking-header:hover {
+            background: linear-gradient(90deg, #059669 0%, #047857 100%);
+        }
+        
+        .qwen-thinking .thinking-content {
+            color: #065f46;
+            border-top-color: #bbf7d0;
+        }
+        
+        .qwen-thinking .thinking-content.streaming {
+            border-right-color: #10b981;
+        }
+        
+        .qwen-thinking .thinking-dot {
+            background-color: #bbf7d0;
+        }
+        
+        @keyframes thinking-cursor-qwen {
+            0%, 50% { border-right-color: #10b981; }
+            51%, 100% { border-right-color: transparent; }
+        }
+        
+        .qwen-thinking .thinking-content.streaming {
+            animation: thinking-cursor-qwen 1s infinite;
+        }
+        
+        /* 会话列表改进样式 */
+        .session-item {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .session-item:hover {
+            transform: translateX(2px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .session-item.active {
+            background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .session-item.active .session-title {
+            color: white;
+            font-weight: 600;
+        }
+        
+        .session-item .delete-btn {
+            transition: all 0.2s ease;
+            opacity: 0;
+            transform: scale(0.8);
+        }
+        
+        .session-item:hover .delete-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        .session-item.active .delete-btn {
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .session-item.active .delete-btn:hover {
+            color: #FCA5A5;
+            transform: scale(1.1);
+        }
+        
+        .session-title {
+            line-height: 1.4;
+            word-break: break-word;
+            hyphens: auto;
+        }
+        
+        /* 响应式字体大小 */
+        @media (max-width: 1200px) {
+            .session-title {
+                font-size: 0.8rem;
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .session-title {
+                font-size: 0.75rem;
+            }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
@@ -189,14 +386,65 @@
             <header class="bg-white shadow-sm sticky top-0 z-10 flex items-center justify-between px-8 py-4 border-b">
                 <div class="flex items-center space-x-2">
                     <i class="fa fa-rocket text-primary text-2xl"></i>
-                    <h1 class="text-xl font-bold text-neutral">Ollama Llama3.2 聊天助手</h1>
+                    <h1 class="text-xl font-bold text-neutral">Ollama 多模型聊天助手</h1>
                 </div>
-                <span id="api-status" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                    <i class="fa fa-circle mr-1"></i>未连接
-                </span>
+                <div class="flex items-center space-x-4">
+                    <!-- 模型选择器 -->
+                    <div class="flex items-center space-x-2">
+                        <label class="text-sm font-medium text-gray-700">当前模型:</label>
+                        <select id="model-selector" class="px-3 py-1.5 text-sm border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
+                            <option value="llama3.2">Llama 3.2</option>
+                            <option value="qwen3:1.7b" selected>Qwen3 1.7B</option>
+                        </select>
+                        <button id="switch-model-btn" class="px-3 py-1.5 text-sm bg-primary text-white rounded-md hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary transition-all">
+                            <i class="fa fa-refresh mr-1"></i>切换
+                        </button>
+                    </div>
+                    <span id="api-status" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        <i class="fa fa-circle mr-1"></i>未连接
+                    </span>
+                </div>
             </header>
             <!-- 会话内容区 -->
-            <section class="flex-1 flex flex-col overflow-hidden">
+            <section class="flex-1 flex flex-col bg-white shadow-lg rounded-lg overflow-hidden">
+                <!-- 聊天头部 -->
+                <div class="bg-white px-8 py-4 border-b flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <h2 class="text-lg font-semibold text-gray-800">聊天对话</h2>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <!-- RAG控制选项 -->
+                        <div class="flex items-center space-x-2 mr-4">
+                            <label class="flex items-center space-x-2 text-sm text-gray-700">
+                                <input type="checkbox" id="use-rag-toggle" checked class="rounded border-gray-300 text-primary focus:ring-primary">
+                                <span>使用RAG</span>
+                            </label>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-sm text-gray-700">相关性阈值:</span>
+                                <input type="range" id="relevance-threshold" min="0" max="1" step="0.01" value="0.5" class="w-20">
+                                <span id="threshold-value" class="text-sm text-gray-600">0.5</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 思考过程控制选项 -->
+                        <div class="flex items-center space-x-2 mr-4">
+                            <label class="flex items-center space-x-2 text-sm text-gray-700">
+                                <input type="checkbox" id="show-thinking-toggle" checked class="rounded border-gray-300 text-secondary focus:ring-secondary">
+                                <span>显示思考过程</span>
+                            </label>
+                            <label class="flex items-center space-x-2 text-sm text-gray-700">
+                                <input type="checkbox" id="auto-collapse-thinking" checked class="rounded border-gray-300 text-secondary focus:ring-secondary">
+                                <span>自动折叠</span>
+                            </label>
+                        </div>
+                        <!-- 知识库状态按钮 -->
+                        <button id="knowledge-base-status" class="inline-flex items-center px-3 py-1.5 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all">
+                            <i class="fa fa-database mr-2"></i>知识库状态
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 聊天容器 -->
                 <div id="chat-container" class="flex-1 overflow-y-auto px-8 py-6 space-y-4 bg-neutral-light">
                     <!-- 聊天气泡 -->
                 </div>
@@ -211,11 +459,327 @@
         </main>
     </div>
     <script>
+    // ========== 思考过程处理 ==========
+    
+    // 思考过程状态管理
+    let thinkingState = {
+        isThinking: false,
+        thinkingContent: '',
+        responseContent: '',
+        thinkingComplete: false
+    };
+    
+    function parseStreamingThinking(content, model) {
+        // 实时解析流式思考过程
+        if (!content || !model || !model.includes('qwen3')) {
+            return { 
+                thinking: null, 
+                response: content, 
+                isThinking: false,
+                thinkingComplete: false 
+            };
+        }
+        
+        // 检测思考过程的开始标记 - 添加Qwen3实际使用的<think>标签
+        const thinkingStartPatterns = [
+            /<think>/i,           // Qwen3实际使用的标签
+            /<thinking>/i,        // 备用标签
+            /【思考】/i,
+            /思考过程[：:]/i,
+            /\*\*思考过程\*\*/i
+        ];
+        
+        // 检测思考过程的结束标记 - 添加Qwen3实际使用的</think>标签
+        const thinkingEndPatterns = [
+            /<\/think>/i,         // Qwen3实际使用的结束标签
+            /<\/thinking>/i,      // 备用结束标签
+            /【\/思考】/i,
+            /回答[：:]/i,
+            /\*\*回答\*\*/i
+        ];
+        
+        let isThinking = false;
+        let thinkingComplete = false;
+        let thinking = '';
+        let response = '';
+        
+        // 检查是否包含完整的思考过程 - 添加Qwen3的<think>标签支持
+        const fullPatterns = [
+            /<think>([\s\S]*?)<\/think>/i,           // Qwen3实际使用的标签
+            /<thinking>([\s\S]*?)<\/thinking>/i,     // 备用标签
+            /【思考】([\s\S]*?)【\/思考】/i,
+            /思考过程[：:]([\s\S]*?)回答[：:]/i,
+            /\*\*思考过程\*\*([\s\S]*?)\*\*回答\*\*/i
+        ];
+        
+        for (const pattern of fullPatterns) {
+            const match = content.match(pattern);
+            if (match) {
+                thinking = match[1].trim();
+                response = content.replace(match[0], '').trim();
+                thinkingComplete = true;
+                return { thinking, response, isThinking: false, thinkingComplete };
+            }
+        }
+        
+        // 检查是否正在思考过程中
+        for (const startPattern of thinkingStartPatterns) {
+            if (startPattern.test(content)) {
+                isThinking = true;
+                break;
+            }
+        }
+        
+        if (isThinking) {
+            // 提取思考内容
+            for (const startPattern of thinkingStartPatterns) {
+                const match = content.match(startPattern);
+                if (match) {
+                    const afterStart = content.substring(match.index + match[0].length);
+                    
+                    // 检查是否有结束标记
+                    let hasEnd = false;
+                    for (const endPattern of thinkingEndPatterns) {
+                        if (endPattern.test(afterStart)) {
+                            hasEnd = true;
+                            const endMatch = afterStart.match(endPattern);
+                            thinking = afterStart.substring(0, endMatch.index).trim();
+                            response = afterStart.substring(endMatch.index + endMatch[0].length).trim();
+                            thinkingComplete = true;
+                            isThinking = false;
+                            break;
+                        }
+                    }
+                    
+                    if (!hasEnd) {
+                        thinking = afterStart.trim();
+                        response = '';
+                    }
+                    break;
+                }
+            }
+        } else {
+            response = content;
+        }
+        
+        return { thinking, response, isThinking, thinkingComplete };
+    }
+    
+    function createStreamingThinkingUI(thinking, model, isStreaming = false, isComplete = false) {
+        // 创建流式思考过程UI
+        if (!thinking && !isStreaming) return '';
+        
+        const modelClass = model && model.includes('qwen3') ? 'qwen-thinking' : '';
+        const streamingClass = isStreaming && !isComplete ? 'streaming' : '';
+        const collapseClass = isComplete && autoCollapseThinking?.checked ? 'collapsed' : '';
+        const toggleClass = collapseClass ? 'collapsed' : '';
+        
+        const headerText = isStreaming && !isComplete ? '正在思考' : '思考过程';
+        const thinkingDots = isStreaming && !isComplete ? `
+            <span class="thinking-dots">
+                <span class="thinking-dot"></span>
+                <span class="thinking-dot"></span>
+                <span class="thinking-dot"></span>
+            </span>
+        ` : '';
+        
+        return `
+            <div class="thinking-container ${modelClass}">
+                <div class="thinking-header" onclick="toggleThinking(this)">
+                    <span class="thinking-indicator">
+                        <i class="fa fa-brain"></i>
+                        ${headerText}
+                        ${thinkingDots}
+                    </span>
+                    <i class="fa fa-chevron-down thinking-toggle ${toggleClass}"></i>
+                </div>
+                <div class="thinking-content ${streamingClass} ${collapseClass}">
+                    ${escapeHtml(thinking || '')}
+                </div>
+            </div>
+        `;
+    }
+    
+    function createThinkingLoadingUI(model) {
+        // 创建思考过程加载中的UI
+        return createStreamingThinkingUI('', model, true, false);
+    }
+    
+    // 全局函数：切换思考过程显示/隐藏
+    window.toggleThinking = function(header) {
+        const container = header.parentNode;
+        const content = container.querySelector('.thinking-content');
+        const toggle = header.querySelector('.thinking-toggle');
+        
+        if (content.classList.contains('collapsed')) {
+            content.classList.remove('collapsed');
+            toggle.classList.remove('collapsed');
+        } else {
+            content.classList.add('collapsed');
+            toggle.classList.add('collapsed');
+        }
+    };
+    
+    // ========== 文本处理工具函数 ==========
+    
+    /**
+     * 智能截断文本，考虑中英文字符宽度差异
+     * @param {string} text - 原始文本
+     * @param {number} maxWidth - 最大显示宽度（以英文字符为基准）
+     * @param {string} ellipsis - 省略号
+     * @returns {string} 截断后的文本
+     */
+    function smartTruncateText(text, maxWidth = 24, ellipsis = '...') {
+        if (!text) return '';
+        
+        let width = 0;
+        let result = '';
+        
+        for (let i = 0; i < text.length; i++) {
+            const char = text[i];
+            const charCode = char.charCodeAt(0);
+            
+            // 计算字符宽度：中文、日文、韩文等宽字符占2个单位，其他占1个单位
+            let charWidth = 1;
+            if (
+                (charCode >= 0x4E00 && charCode <= 0x9FFF) ||  // 中文汉字
+                (charCode >= 0x3400 && charCode <= 0x4DBF) ||  // 中文扩展A
+                (charCode >= 0x20000 && charCode <= 0x2A6DF) || // 中文扩展B
+                (charCode >= 0x3040 && charCode <= 0x309F) ||  // 日文平假名
+                (charCode >= 0x30A0 && charCode <= 0x30FF) ||  // 日文片假名
+                (charCode >= 0xAC00 && charCode <= 0xD7AF) ||  // 韩文
+                (charCode >= 0xFF00 && charCode <= 0xFFEF)     // 全角字符
+            ) {
+                charWidth = 2;
+            }
+            
+            // 检查是否超出宽度限制
+            if (width + charWidth > maxWidth) {
+                // 如果是第一个字符就超出，至少保留一个字符
+                if (result.length === 0) {
+                    result = char;
+                }
+                result += ellipsis;
+                break;
+            }
+            
+            width += charWidth;
+            result += char;
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 根据容器宽度动态计算最大字符数
+     * @param {HTMLElement} container - 容器元素
+     * @param {string} sampleText - 样本文本用于测量
+     * @returns {number} 最大字符宽度
+     */
+    function calculateMaxWidth(container, sampleText = 'A测') {
+        if (!container) return 24;
+        
+        // 创建临时测量元素
+        const measurer = document.createElement('span');
+        measurer.style.visibility = 'hidden';
+        measurer.style.position = 'absolute';
+        measurer.style.whiteSpace = 'nowrap';
+        measurer.style.fontSize = window.getComputedStyle(container).fontSize;
+        measurer.style.fontFamily = window.getComputedStyle(container).fontFamily;
+        measurer.textContent = sampleText;
+        
+        container.appendChild(measurer);
+        const sampleWidth = measurer.offsetWidth;
+        container.removeChild(measurer);
+        
+        // 计算容器可用宽度（减去padding和margin）
+        const containerStyle = window.getComputedStyle(container);
+        const availableWidth = container.offsetWidth - 
+            parseFloat(containerStyle.paddingLeft) - 
+            parseFloat(containerStyle.paddingRight) - 
+            32; // 预留删除按钮和间距的空间
+        
+        // 计算平均字符宽度并返回最大字符数
+        const avgCharWidth = sampleWidth / sampleText.length;
+        return Math.floor(availableWidth / avgCharWidth);
+    }
+    
+    /**
+     * 智能生成会话标题
+     * @param {string} message - 用户消息
+     * @param {number} maxWidth - 最大宽度
+     * @returns {string} 处理后的标题
+     */
+    function generateSessionTitle(message, maxWidth = 24) {
+        if (!message) return '未命名会话';
+        
+        // 清理消息内容
+        let cleanMessage = message
+            .replace(/\s+/g, ' ')           // 合并多个空格
+            .replace(/[\r\n]+/g, ' ')       // 替换换行符为空格
+            .trim();                        // 去除首尾空格
+        
+        // 如果是代码或特殊格式，尝试提取关键信息
+        if (cleanMessage.includes('```')) {
+            const codeMatch = cleanMessage.match(/```(\w+)?\s*([\s\S]*?)```/);
+            if (codeMatch) {
+                const language = codeMatch[1] || '代码';
+                cleanMessage = `${language}相关问题`;
+            }
+        }
+        
+        // 如果是问句，保留问号
+        const isQuestion = cleanMessage.endsWith('？') || cleanMessage.endsWith('?');
+        
+        // 智能截断
+        let title = smartTruncateText(cleanMessage, maxWidth);
+        
+        // 如果原文是问句但截断后丢失了问号，尝试添加回去
+        if (isQuestion && !title.includes('?') && !title.includes('？') && !title.endsWith('...')) {
+            title = smartTruncateText(cleanMessage, maxWidth - 1) + '?';
+        }
+        
+        return title || '未命名会话';
+    }
+    
+    /**
+     * 防抖函数，用于优化频繁调用的函数
+     * @param {Function} func - 需要防抖的函数
+     * @param {number} wait - 等待时间（毫秒）
+     * @returns {Function} 防抖后的函数
+     */
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    /**
+     * 改进的HTML转义函数，防止XSS攻击
+     * @param {string} text - 需要转义的文本
+     * @returns {string} 转义后的文本
+     */
+    function escapeHtml(text) {
+        if (!text) return '';
+        return text.replace(/[&<>"']/g, c => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', 
+            '"': '&quot;', "'": '&#x27;'
+        }[c]));
+    }
+
     // ========== 会话和多轮对话管理 ==========
     const apiBaseUrl = 'http://localhost:8000';
     let sessions = [];
     let currentSessionId = null;
     let chatData = {}; // { sessionId: [ {role, content} ] }
+    let currentModel = 'qwen3:1.7b'; // 当前模型改为Qwen3
+    let availableModels = ['llama3.2', 'qwen3:1.7b']; // 可用模型列表
 
     // DOM元素
     const sessionList = document.getElementById('session-list');
@@ -224,6 +788,11 @@
     const btnSendMessage = document.getElementById('btn-send-message');
     const btnNewSession = document.getElementById('btn-new-session');
     const apiStatusIndicator = document.getElementById('api-status');
+    const knowledgeBaseStatusBtn = document.getElementById('knowledge-base-status');
+    const modelSelector = document.getElementById('model-selector');
+    const switchModelBtn = document.getElementById('switch-model-btn');
+    const showThinkingToggle = document.getElementById('show-thinking-toggle');
+    const autoCollapseThinking = document.getElementById('auto-collapse-thinking');
 
     // 初始化
     document.addEventListener('DOMContentLoaded', async () => {
@@ -234,6 +803,8 @@
         }
         bindEvents();
         checkApiConnection();
+        checkKnowledgeBaseStatus();
+        await loadAvailableModels(); // 加载可用模型
     });
 
     function bindEvents() {
@@ -245,6 +816,42 @@
                 handleSendMessage();
             }
         });
+        
+        // RAG控制选项
+        const useRagToggle = document.getElementById('use-rag-toggle');
+        const relevanceThreshold = document.getElementById('relevance-threshold');
+        const thresholdValue = document.getElementById('threshold-value');
+        
+        useRagToggle.addEventListener('change', function() {
+            console.log('RAG开关状态:', this.checked);
+        });
+        
+        relevanceThreshold.addEventListener('input', function() {
+            thresholdValue.textContent = this.value;
+            console.log('相关性阈值:', this.value);
+        });
+        
+        // 知识库状态检查
+        knowledgeBaseStatusBtn.addEventListener('click', checkKnowledgeBaseStatus);
+        
+        // 模型切换事件
+        switchModelBtn.addEventListener('click', handleModelSwitch);
+        modelSelector.addEventListener('change', function() {
+            console.log('选择的模型:', this.value);
+        });
+        
+        // 思考过程控制事件
+        showThinkingToggle.addEventListener('change', function() {
+            console.log('显示思考过程:', this.checked);
+            // 重新渲染聊天内容
+            renderChat();
+        });
+        
+        autoCollapseThinking.addEventListener('change', function() {
+            console.log('自动折叠思考过程:', this.checked);
+            // 重新渲染聊天内容
+            renderChat();
+        });
     }
 
     // ========== 会话管理 ==========
@@ -252,11 +859,13 @@
         // 本地存储模拟会话列表
         sessions = JSON.parse(localStorage.getItem('chatSessions') || '[]');
         chatData = JSON.parse(localStorage.getItem('chatData') || '{}');
+        // sessionDocuments = JSON.parse(localStorage.getItem('sessionDocuments') || '{}'); // 移除文件上传相关
         renderSessionList();
     }
     function saveSessions() {
         localStorage.setItem('chatSessions', JSON.stringify(sessions));
         localStorage.setItem('chatData', JSON.stringify(chatData));
+        // localStorage.setItem('sessionDocuments', JSON.stringify(sessionDocuments)); // 移除文件上传相关
     }
     function renderSessionList() {
         sessionList.innerHTML = '';
@@ -264,8 +873,12 @@
             sessionList.innerHTML = '<div class="text-gray-400 text-center py-8">暂无会话</div>';
             return;
         }
+        
         sessions.forEach(sess => {
-            // 用第一条用户消息作为会话名，超长打点
+            // 动态计算最大宽度
+            const maxWidth = calculateMaxWidth(sessionList);
+            
+            // 使用智能标题生成
             let title = sess.title;
             if (!title && chatData[sess.id] && chatData[sess.id].length > 0) {
                 const firstUserMsg = chatData[sess.id].find(m => m.role === 'user');
@@ -273,25 +886,47 @@
                     title = firstUserMsg.content;
                 }
             }
-            if (!title) title = '未命名会话';
-            if (title.length > 16) title = title.slice(0, 15) + '...';
-            const active = sess.id === currentSessionId ? 'bg-primary/10 border-primary text-primary' : 'bg-gray-50 hover:bg-primary/5';
+            
+            // 生成智能标题
+            const displayTitle = generateSessionTitle(title, maxWidth);
+            const fullTitle = title || '未命名会话';
+            
+            const isActive = sess.id === currentSessionId;
+            const activeClass = isActive ? 'active' : '';
+            
+            // 添加更好的样式和交互
             sessionList.innerHTML += `
-                <div class="flex items-center justify-between px-3 py-2 rounded border cursor-pointer ${active} transition" onclick="switchSession('${sess.id}')">
-                    <span class="truncate" title="${title}">${title}</span>
-                    <i class="fa fa-trash text-gray-300 hover:text-red-400 ml-2" onclick="event.stopPropagation();deleteSession('${sess.id}')"></i>
+                <div class="session-item ${activeClass} flex items-center justify-between px-3 py-2.5 rounded-lg border cursor-pointer" onclick="switchSession('${sess.id}')">
+                    <span class="session-title truncate flex-1 font-medium" title="${escapeHtml(fullTitle)}">${escapeHtml(displayTitle)}</span>
+                    <i class="delete-btn fa fa-trash ml-2 text-xs" onclick="event.stopPropagation();deleteSession('${sess.id}')" title="删除会话"></i>
                 </div>
             `;
         });
+        
+        // 添加窗口大小变化监听器，动态调整标题显示
+        if (!window.sessionListResizeHandler) {
+            window.sessionListResizeHandler = debounce(() => {
+                renderSessionList();
+            }, 250);
+            window.addEventListener('resize', window.sessionListResizeHandler);
+        }
     }
     window.switchSession = function(id) {
         currentSessionId = id;
         renderSessionList();
         renderChat();
+        
+        // 更新文档状态显示
+        // if (isRagMode && sessionDocuments[id] && sessionDocuments[id].length > 0) { // 移除文件上传相关
+        //     showDocumentStatus();
+        // } else {
+        //     hideDocumentStatus();
+        // }
     }
     window.deleteSession = function(id) {
         sessions = sessions.filter(s => s.id !== id);
         delete chatData[id];
+        // delete sessionDocuments[id]; // 移除文件上传相关
         if (currentSessionId === id) {
             currentSessionId = sessions.length > 0 ? sessions[0].id : null;
         }
@@ -304,10 +939,12 @@
         // 初始title为空，后续用第一条消息内容命名
         sessions.unshift({ id: newId, title: '' });
         chatData[newId] = [];
+        // sessionDocuments[newId] = []; // 移除文件上传相关
         currentSessionId = newId;
         saveSessions();
         renderSessionList();
         renderChat();
+        // hideDocumentStatus(); // 移除文件上传相关
         userMessageInput.value = '';
         userMessageInput.focus();
     }
@@ -333,8 +970,11 @@
         } else {
             // 检查是否为loading状态
             if (msg.content === '...' || msg.content === 'loading') {
+                // 如果是qwen3模型，显示思考过程加载动画
+                const thinkingUI = msg.model && msg.model.includes('qwen3') ? createThinkingLoadingUI(msg.model) : '';
                 return `<div class="flex justify-start">
                     <div class="max-w-2xl bg-white border border-gray-200 text-gray-800 rounded-lg px-4 py-2 mb-2 shadow" style="max-width: 50vw;">
+                        ${thinkingUI}
                         <div class="loading-dots-container">
                             <div class="loading-dot"></div>
                             <div class="loading-dot"></div>
@@ -343,20 +983,44 @@
                     </div>
                 </div>`;
             } else {
-                // 配置marked选项以更好地处理代码块
-                marked.setOptions({
-                    breaks: true,
-                    gfm: true,
-                    highlight: function(code, lang) {
-                        // 为代码块添加语法高亮样式
-                        return `<pre class="bg-gray-100 p-3 rounded-md overflow-x-auto text-sm font-mono"><code class="language-${lang || 'text'}">${escapeHtml(code)}</code></pre>`;
-                    }
-                });
+                // 检查用户是否启用了思考过程显示
+                const showThinking = showThinkingToggle ? showThinkingToggle.checked : true;
                 
-                // 使用marked渲染markdown，并添加自定义样式
-                const rendered = marked.parse(msg.content);
-                return `<div class="flex justify-start">
-                    <div class="max-w-2xl bg-white border border-gray-200 text-gray-800 rounded-lg px-4 py-2 mb-2 shadow prose prose-sm prose-zinc max-w-none" style="max-width: 50vw;">
+                // 解析或使用已解析的思考过程和回答内容
+                let thinking = msg.thinking || '';
+                let response = msg.response || msg.content;
+                let isThinking = msg.isThinking || false;
+                let thinkingComplete = msg.thinkingComplete || false;
+                
+                // 如果没有预解析的数据，进行实时解析
+                if (!msg.thinking && !msg.response) {
+                    const parsed = parseStreamingThinking(msg.content, msg.model);
+                    thinking = parsed.thinking;
+                    response = parsed.response;
+                    isThinking = parsed.isThinking;
+                    thinkingComplete = parsed.thinkingComplete;
+                }
+                
+                // 创建思考过程UI
+                const thinkingUI = (showThinking && thinking) ? 
+                    createStreamingThinkingUI(thinking, msg.model, isThinking, thinkingComplete) : '';
+                
+                // 只有在思考完成后才显示响应内容，或者没有思考过程时显示响应
+                let responseContent = '';
+                if (!thinking || thinkingComplete) {
+                    // 配置marked选项以更好地处理代码块
+                    marked.setOptions({
+                        breaks: true,
+                        gfm: true,
+                        highlight: function(code, lang) {
+                            // 为代码块添加语法高亮样式
+                            return `<pre class="bg-gray-100 p-3 rounded-md overflow-x-auto text-sm font-mono"><code class="language-${lang || 'text'}">${escapeHtml(code)}</code></pre>`;
+                        }
+                    });
+                    
+                    // 使用marked渲染markdown，并添加自定义样式
+                    const rendered = response ? marked.parse(response) : '';
+                    responseContent = `
                         <style>
                             .prose pre { margin: 0.5em 0; }
                             .prose code { background-color: #f3f4f6; padding: 0.2em 0.4em; border-radius: 0.25rem; font-size: 0.875em; }
@@ -364,15 +1028,58 @@
                             .prose pre { background-color: #f8f9fa; border: 1px solid #e5e7eb; }
                         </style>
                         ${rendered}
+                    `;
+                }
+                
+                const modelBadge = msg.model ? `<div class="text-xs text-gray-500 mb-2"><i class="fa fa-robot mr-1"></i>${getModelDisplayName(msg.model)}</div>` : '';
+                
+                return `<div class="flex justify-start">
+                    <div class="max-w-2xl bg-white border border-gray-200 text-gray-800 rounded-lg px-4 py-2 mb-2 shadow prose prose-sm prose-zinc max-w-none" style="max-width: 50vw;">
+                        ${modelBadge}
+                        ${thinkingUI}
+                        ${responseContent}
                     </div>
                 </div>`;
             }
         }
     }
-    function escapeHtml(text) {
-        return text.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-    }
+    // 删除旧的escapeHtml函数，使用改进版本
 
+    function updateStreamingContent(sessionId, content, model) {
+        // 实时更新流式内容，包括思考过程的解析
+        const lastMsgIndex = chatData[sessionId].length - 1;
+        chatData[sessionId][lastMsgIndex].content = content;
+        chatData[sessionId][lastMsgIndex].model = model;
+        
+        // 实时解析思考过程
+        const parsed = parseStreamingThinking(content, model);
+        
+        // 存储解析状态
+        chatData[sessionId][lastMsgIndex].thinking = parsed.thinking;
+        chatData[sessionId][lastMsgIndex].response = parsed.response;
+        chatData[sessionId][lastMsgIndex].isThinking = parsed.isThinking;
+        chatData[sessionId][lastMsgIndex].thinkingComplete = parsed.thinkingComplete;
+        
+        renderChat();
+        
+        // 如果思考完成，自动折叠（默认启用自动折叠）
+        if (parsed.thinkingComplete && (autoCollapseThinking?.checked !== false)) {
+            setTimeout(() => {
+                const thinkingContainers = document.querySelectorAll('.thinking-container');
+                if (thinkingContainers.length > 0) {
+                    const lastContainer = thinkingContainers[thinkingContainers.length - 1];
+                    const content = lastContainer.querySelector('.thinking-content');
+                    const toggle = lastContainer.querySelector('.thinking-toggle');
+                    
+                    if (content && !content.classList.contains('collapsed')) {
+                        content.classList.add('collapsed');
+                        toggle?.classList.add('collapsed');
+                    }
+                }
+            }, 500); // 延迟0.5秒后自动折叠，让用户能看到思考过程完成
+        }
+    }
+    
     // ========== 发送消息 ==========
     
     // 文本格式化函数
@@ -398,26 +1105,41 @@
         formatted = formatted.replace(/([^。！？\n]+：)(\s*)(\d+\.)/g, '$1\n$3');
         
         // 4. 处理列表项：确保每个序号项目单独一行
-        // 匹配 "1.Java或Kotlin程序MING语言的基础知识。" 这样的列表项
-        formatted = formatted.replace(/(\d+\.)([^。！？\n]+[。！？])/g, function(match, number, content) {
+        // 改进：匹配更广泛的序号格式，包括中文序号
+        formatted = formatted.replace(/(\d+\.)([^。！？\n]*[。！？\n]?)/g, function(match, number, content) {
             // 检查前面是否有换行符
             const beforeMatch = formatted.substring(0, formatted.indexOf(match));
             if (beforeMatch && !beforeMatch.endsWith('\n')) {
-                return '\n' + match;
+                return '\n' + number + content;
             }
-            return match;
+            return number + content;
         });
         
-        // 5. 处理连续的序号项目，确保它们之间有换行
-        formatted = formatted.replace(/(\d+\.)([^。！？\n]+[。！？])(\s*)(\d+\.)/g, '$1$2\n$4');
+        // 5. 处理中文序号格式 (一、二、三、等)
+        formatted = formatted.replace(/([一二三四五六七八九十]+、)([^。！？\n]*[。！？\n]?)/g, function(match, number, content) {
+            const beforeMatch = formatted.substring(0, formatted.indexOf(match));
+            if (beforeMatch && !beforeMatch.endsWith('\n')) {
+                return '\n' + number + content;
+            }
+            return number + content;
+        });
         
-        // 6. 确保段落之间有适当的空行
+        // 6. 处理连续的序号项目，确保它们之间有换行
+        // 改进：同时处理数字序号和中文序号
+        formatted = formatted.replace(/(\d+\.)([^。！？\n]*[。！？])(\s*)(\d+\.)/g, '$1$2\n$4');
+        formatted = formatted.replace(/([一二三四五六七八九十]+、)([^。！？\n]*[。！？])(\s*)([一二三四五六七八九十]+、)/g, '$1$2\n$4');
+        formatted = formatted.replace(/(\d+\.)([^。！？\n]*[。！？])(\s*)([一二三四五六七八九十]+、)/g, '$1$2\n$4');
+        formatted = formatted.replace(/([一二三四五六七八九十]+、)([^。！？\n]*[。！？])(\s*)(\d+\.)/g, '$1$2\n$4');
+        
+        // 7. 确保段落之间有适当的空行
         formatted = formatted.replace(/([。！？])\s*(\d+\.)/g, '$1\n\n$2');
+        formatted = formatted.replace(/([。！？])\s*([一二三四五六七八九十]+、)/g, '$1\n\n$2');
         
-        // 7. 处理特殊情况：如果标题后面直接跟序号，确保换行
+        // 8. 处理特殊情况：如果标题后面直接跟序号，确保换行
         formatted = formatted.replace(/(：)\s*(\d+\.)/g, '$1\n$2');
+        formatted = formatted.replace(/(：)\s*([一二三四五六七八九十]+、)/g, '$1\n$2');
         
-        // 8. 处理代码中的常见格式问题
+        // 9. 处理代码中的常见格式问题
         // 修复Java代码中的常见问题
         formatted = formatted.replace(/publicclass/g, 'public class');
         formatted = formatted.replace(/publicstatic/g, 'public static');
@@ -432,7 +1154,7 @@
         formatted = formatted.replace(/}\s*for/g, '}\nfor');
         formatted = formatted.replace(/}\s*if/g, '}\nif');
         
-        // 9. 智能代码格式化 - 处理更多Java代码格式问题
+        // 10. 智能代码格式化 - 处理更多Java代码格式问题
         // 修复类名和方法名之间的空格
         formatted = formatted.replace(/([a-zA-Z])([A-Z][a-zA-Z]*)/g, function(match, first, rest) {
             // 避免在代码块内过度处理
@@ -465,9 +1187,15 @@
             return '```' + (lang || '') + '\n' + indentedLines.join('\n') + '\n```';
         });
         
-        // 10. 确保代码块前后有适当的空行
+        // 11. 确保代码块前后有适当的空行
         formatted = formatted.replace(/([^`\n])\n```/g, '$1\n\n```');
         formatted = formatted.replace(/```\n([^`\n])/g, '```\n\n$1');
+        
+        // 12. 最终清理：确保序号项目前后有适当的空行
+        // 处理数字序号
+        formatted = formatted.replace(/([^。！？\n])\n(\d+\.)/g, '$1\n\n$2');
+        // 处理中文序号
+        formatted = formatted.replace(/([^。！？\n])\n([一二三四五六七八九十]+、)/g, '$1\n\n$2');
         
         return formatted;
     }
@@ -483,16 +1211,20 @@
             }, 1500);
             return;
         }
+        
         // 如果没有会话，首次输入时新建会话
         if (!currentSessionId) {
             await handleNewSession();
         }
+        
         // 追加用户消息
         chatData[currentSessionId] = chatData[currentSessionId] || [];
         chatData[currentSessionId].push({ role: 'user', content: message });
-        // 如果会话title为空，则用第一条消息命名
+        
+        // 如果会话title为空，则用第一条消息智能命名
         const sess = sessions.find(s => s.id === currentSessionId);
         if (sess && !sess.title) {
+            // 使用智能标题生成，不需要在这里截断，renderSessionList会处理
             sess.title = message;
         }
         renderChat();
@@ -501,26 +1233,44 @@
         saveSessions();
         
         // 追加助手loading气泡
-        chatData[currentSessionId].push({ role: 'assistant', content: 'loading' });
+        chatData[currentSessionId].push({ role: 'assistant', content: 'loading', model: currentModel });
         renderChat();
         
-        // 使用流式响应
+        // 使用RAG API
+        const apiEndpoint = '/api/chat/rag/stream';
+        console.log('选择的API端点:', apiEndpoint);
+        console.log('当前使用模型:', currentModel);
+        
+        // 获取用户设置的控制选项
+        const useRagToggle = document.getElementById('use-rag-toggle');
+        const relevanceThreshold = document.getElementById('relevance-threshold');
+        
+        const requestBody = {
+            message,
+            system_prompt: '你是一个基于文档的智能助手。请根据用户上传的文档内容回答问题。如果文档中没有相关信息，请明确说明。',
+            stream: true,
+            session_id: currentSessionId,
+            relevance_threshold: parseFloat(relevanceThreshold.value),
+            use_rag: useRagToggle.checked
+        };
+        
+        console.log('发送请求到:', `${apiBaseUrl}${apiEndpoint}`);
+        console.log('请求体:', requestBody);
+        
         try {
-            const response = await fetch(`${apiBaseUrl}/api/chat/stream`, {
+            const response = await fetch(`${apiBaseUrl}${apiEndpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message,
-                    system_prompt: '你是一个 helpful 的助手。请用简洁明了的语言回答用户的问题。',
-                    stream: true,
-                    session_id: currentSessionId
-                })
+                body: JSON.stringify(requestBody)
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                console.error('HTTP错误响应:', errorText);
+                throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
             }
 
+            console.log('流式响应开始，状态:', response.status);
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let fullResponse = '';
@@ -534,6 +1284,7 @@
                 const { done, value } = await reader.read();
                 
                 if (done) {
+                    console.log('流式响应结束');
                     break;
                 }
 
@@ -548,6 +1299,7 @@
                         const data = line.slice(6).trim();
                         
                         if (data === '' || data === '[DONE]') {
+                            console.log('收到结束标记:', data);
                             continue;
                         }
                         
@@ -555,24 +1307,29 @@
                             // 尝试解析为JSON事件
                             if (data.startsWith('{')) {
                                 const eventData = JSON.parse(data);
+                                console.log('收到JSON事件:', eventData);
+                                
                                 if (eventData.event === 'end') {
+                                    console.log('收到结束事件');
                                     break;
                                 }
                                 if (eventData.event === 'error') {
+                                    console.error('收到错误事件:', eventData.data);
                                     throw new Error(eventData.data || '流式响应出错');
                                 }
                                 // 如果是message事件，使用data字段
                                 if (eventData.event === 'message' && eventData.data) {
                                     fullResponse += eventData.data;
+                                    console.log('收到消息数据，当前总长度:', fullResponse.length);
                                 }
                             } else {
                                 // 纯文本数据
                                 fullResponse += data;
+                                console.log('收到纯文本数据，当前总长度:', fullResponse.length);
                             }
                             
                             // 实时更新显示内容
-                            chatData[currentSessionId][chatData[currentSessionId].length - 1].content = formatStreamingText(fullResponse);
-                            renderChat();
+                            updateStreamingContent(currentSessionId, formatStreamingText(fullResponse), currentModel);
                             
                             // 滚动到底部
                             setTimeout(() => {
@@ -581,46 +1338,341 @@
                             
                         } catch (parseError) {
                             console.warn('解析流式数据时出错:', parseError);
+                            console.warn('原始数据:', data);
                             // 如果不是JSON，当作纯文本处理
                             if (!data.startsWith('{')) {
                                 fullResponse += data;
-                                chatData[currentSessionId][chatData[currentSessionId].length - 1].content = formatStreamingText(fullResponse);
-                                renderChat();
+                                updateStreamingContent(currentSessionId, formatStreamingText(fullResponse), currentModel);
                             }
                         }
                     }
                 }
             }
 
+            console.log('流式响应处理完成，最终内容长度:', fullResponse.length);
             // 确保最终内容被保存
-            chatData[currentSessionId][chatData[currentSessionId].length - 1].content = formatStreamingText(fullResponse) || '[无响应]';
-            renderChat();
+            updateStreamingContent(currentSessionId, formatStreamingText(fullResponse) || '[无响应]', currentModel);
             saveSessions();
             renderSessionList(); // 及时刷新会话名
             
         } catch (e) {
-            console.error('流式请求失败:', e);
-            chatData[currentSessionId][chatData[currentSessionId].length - 1].content = `[助手响应失败: ${e.message}]`;
-            renderChat();
+            console.error('流式请求失败，详细错误:', e);
+            console.error('错误类型:', e.constructor.name);
+            console.error('错误消息:', e.message);
+            console.error('错误堆栈:', e.stack);
+            
+            // 如果是网络错误，提供更多信息
+            if (e.name === 'TypeError' && e.message.includes('fetch')) {
+                console.error('网络连接错误，请检查后端服务是否运行在:', apiBaseUrl);
+            }
+            
+            updateStreamingContent(currentSessionId, `[助手响应失败: ${e.message}]`, currentModel);
             saveSessions();
         }
     }
 
     // ========== API健康检查 ==========
     async function checkApiConnection() {
+        console.log('开始检查API连接状态...');
+        console.log('健康检查URL:', `${apiBaseUrl}/api/health`);
+        
         try {
+            console.log('发送API健康检查请求...');
             const resp = await fetch(`${apiBaseUrl}/api/health`);
+            
+            console.log('API健康检查响应状态:', resp.status, resp.statusText);
+            console.log('API健康检查响应头:', Object.fromEntries(resp.headers.entries()));
+            
+            if (!resp.ok) {
+                const errorText = await resp.text();
+                console.error('API健康检查HTTP错误:', errorText);
+                throw new Error(`HTTP ${resp.status}: ${errorText}`);
+            }
+            
             const data = await resp.json();
+            console.log('API健康检查响应数据:', data);
+            
+            // 更新当前模型信息
+            if (data.model) {
+                currentModel = data.model;
+                updateModelSelector();
+            }
+            
             if (data.status === 'healthy') {
-                apiStatusIndicator.innerHTML = '<i class="fa fa-circle mr-1"></i>已连接';
+                console.log('API连接正常，当前模型:', currentModel);
+                apiStatusIndicator.innerHTML = `<i class="fa fa-circle mr-1"></i>已连接 (${getModelDisplayName(currentModel)})`;
                 apiStatusIndicator.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800';
             } else {
+                console.log('API状态异常:', data.status);
                 apiStatusIndicator.innerHTML = '<i class="fa fa-circle mr-1"></i>未连接';
                 apiStatusIndicator.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
             }
-        } catch {
+        } catch (error) {
+            console.error('API健康检查失败，详细错误:', error);
+            console.error('错误类型:', error.constructor.name);
+            console.error('错误消息:', error.message);
+            console.error('错误堆栈:', error.stack);
+            
+            // 如果是网络错误，提供更多信息
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                console.error('网络连接错误，请检查后端服务是否运行在:', apiBaseUrl);
+            }
+            
             apiStatusIndicator.innerHTML = '<i class="fa fa-circle mr-1"></i>未连接';
             apiStatusIndicator.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800';
+        }
+    }
+    
+    // ========== RAG功能 ==========
+    
+    // 文件上传处理
+    // async function handleFileUpload(event) { // 移除文件上传相关
+    //     const file = event.target.files[0];
+    //     if (!file) return;
+        
+    //     console.log('开始上传文件:', file.name, '大小:', file.size);
+        
+    //     if (!currentSessionId) {
+    //         console.log('没有当前会话，创建新会话');
+    //         await handleNewSession();
+    //     }
+        
+    //     const formData = new FormData();
+    //     formData.append('file', file);
+        
+    //     // 显示上传中的通知
+    //     showNotification(`正在上传 ${file.name}...`, 'info');
+        
+    //     try {
+    //         console.log('发送上传请求到:', `${apiBaseUrl}/api/upload/document?session_id=${currentSessionId}`);
+            
+    //         const response = await fetch(`${apiBaseUrl}/api/upload/document?session_id=${currentSessionId}`, {
+    //             method: 'POST',
+    //             body: formData
+    //         });
+            
+    //         console.log('上传响应状态:', response.status, response.statusText);
+            
+    //         if (!response.ok) {
+    //             const errorText = await response.text();
+    //             console.error('上传失败，响应内容:', errorText);
+    //             throw new Error(`上传失败: ${response.status} - ${errorText}`);
+    //         }
+            
+    //         const result = await response.json();
+    //         console.log('上传成功，响应:', result);
+            
+    //         if (result.success) {
+    //             // 更新会话文档列表
+    //             if (!sessionDocuments[currentSessionId]) {
+    //                 sessionDocuments[currentSessionId] = [];
+    //             }
+    //             sessionDocuments[currentSessionId].push(file.name);
+                
+    //             // 显示文档状态
+    //             showDocumentStatus();
+                
+    //             // 显示成功消息
+    //             showNotification(`文档 ${file.name} 上传成功！`, 'success');
+                
+    //             // 保存状态
+    //             saveSessions();
+    //         } else {
+    //             throw new Error(result.message || '上传失败');
+    //         }
+            
+    //     } catch (error) {
+    //         console.error('文件上传失败:', error);
+    //         showNotification(`文件上传失败: ${error.message}`, 'error');
+    //     }
+        
+    //     // 清空文件输入
+    //     event.target.value = '';
+    // }
+    
+    // 显示通知
+    function showNotification(message, type = 'info') {
+        // 创建通知元素
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 z-50 px-4 py-2 rounded-md shadow-lg text-white text-sm font-medium transition-all duration-300 transform translate-x-full`;
+        
+        switch (type) {
+            case 'success':
+                notification.className += ' bg-green-500';
+                break;
+            case 'error':
+                notification.className += ' bg-red-500';
+                break;
+            case 'warning':
+                notification.className += ' bg-yellow-500';
+                break;
+            default:
+                notification.className += ' bg-blue-500';
+        }
+        
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        // 显示动画
+        setTimeout(() => {
+            notification.classList.remove('translate-x-full');
+        }, 100);
+        
+        // 自动移除
+        setTimeout(() => {
+            notification.classList.add('translate-x-full');
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, 3000);
+    }
+
+    // ========== 知识库状态检查 ==========
+    async function checkKnowledgeBaseStatus() {
+        console.log('开始检查知识库状态...');
+        console.log('请求URL:', `${apiBaseUrl}/api/knowledge-base/status`);
+        
+        try {
+            console.log('发送知识库状态检查请求...');
+            const resp = await fetch(`${apiBaseUrl}/api/knowledge-base/status`);
+            
+            console.log('响应状态:', resp.status, resp.statusText);
+            console.log('响应头:', Object.fromEntries(resp.headers.entries()));
+            
+            if (!resp.ok) {
+                const errorText = await resp.text();
+                console.error('HTTP错误响应:', errorText);
+                throw new Error(`HTTP ${resp.status}: ${errorText}`);
+            }
+            
+            const data = await resp.json();
+            console.log('知识库状态响应数据:', data);
+            
+            if (data.status === 'loaded') {
+                console.log('知识库已加载，文档数量:', data.document_count);
+                knowledgeBaseStatusBtn.innerHTML = '<i class="fa fa-database mr-2"></i>知识库状态 (已加载)';
+                knowledgeBaseStatusBtn.className = 'inline-flex items-center px-3 py-1.5 rounded-md shadow-sm text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all';
+                showNotification(`知识库已加载，包含 ${data.document_count} 个文档`, 'success');
+            } else {
+                console.log('知识库未加载，状态:', data.status, '消息:', data.message);
+                knowledgeBaseStatusBtn.innerHTML = '<i class="fa fa-database mr-2"></i>知识库状态 (未加载)';
+                knowledgeBaseStatusBtn.className = 'inline-flex items-center px-3 py-1.5 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all';
+                showNotification(data.message || '知识库未加载', 'warning');
+            }
+        } catch (error) {
+            console.error('获取知识库状态失败，详细错误:', error);
+            console.error('错误类型:', error.constructor.name);
+            console.error('错误消息:', error.message);
+            console.error('错误堆栈:', error.stack);
+            
+            // 如果是网络错误，提供更多信息
+            if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                console.error('网络连接错误，请检查后端服务是否运行在:', apiBaseUrl);
+            }
+            
+            knowledgeBaseStatusBtn.innerHTML = '<i class="fa fa-database mr-2"></i>知识库状态 (错误)';
+            knowledgeBaseStatusBtn.className = 'inline-flex items-center px-3 py-1.5 rounded-md shadow-sm text-sm font-medium text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all';
+            showNotification(`获取知识库状态失败: ${error.message}`, 'error');
+        }
+    }
+
+    // ========== 模型管理 ==========
+    async function loadAvailableModels() {
+        try {
+            console.log('获取可用模型列表...');
+            const resp = await fetch(`${apiBaseUrl}/api/models`);
+            
+            if (!resp.ok) {
+                const errorText = await resp.text();
+                console.error('获取模型列表失败:', errorText);
+                throw new Error(`HTTP ${resp.status}: ${errorText}`);
+            }
+            
+            const data = await resp.json();
+            console.log('可用模型数据:', data);
+            
+            availableModels = data.available_models || ['llama3.2', 'qwen2:1.7b'];
+            currentModel = data.current_model || 'llama3.2';
+            
+            // 更新模型选择器
+            updateModelSelector();
+            
+        } catch (error) {
+            console.error('获取可用模型失败:', error);
+            showNotification(`获取模型列表失败: ${error.message}`, 'error');
+        }
+    }
+
+    function updateModelSelector() {
+        // 清空现有选项
+        modelSelector.innerHTML = '';
+        
+        // 添加可用模型选项
+        availableModels.forEach(model => {
+            const option = document.createElement('option');
+            option.value = model;
+            option.textContent = getModelDisplayName(model);
+            if (model === currentModel) {
+                option.selected = true;
+            }
+            modelSelector.appendChild(option);
+        });
+    }
+
+    function getModelDisplayName(model) {
+        const displayNames = {
+            'llama3.2': 'Llama 3.2',
+            'qwen3:1.7b': 'Qwen3 1.7B'
+        };
+        return displayNames[model] || model;
+    }
+
+    async function handleModelSwitch() {
+        const selectedModel = modelSelector.value;
+        
+        if (selectedModel === currentModel) {
+            showNotification('已经是当前模型了', 'info');
+            return;
+        }
+        
+        console.log('开始切换模型:', selectedModel);
+        
+        // 显示切换中状态
+        switchModelBtn.disabled = true;
+        switchModelBtn.innerHTML = '<i class="fa fa-spinner fa-spin mr-1"></i>切换中...';
+        
+        try {
+            const response = await fetch(`${apiBaseUrl}/api/models/switch`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model_name: selectedModel })
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('模型切换失败:', errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+            
+            const result = await response.json();
+            console.log('模型切换成功:', result);
+            
+            currentModel = selectedModel;
+            showNotification(result.message || `成功切换到 ${getModelDisplayName(selectedModel)}`, 'success');
+            
+            // 更新API状态
+            checkApiConnection();
+            
+        } catch (error) {
+            console.error('模型切换失败:', error);
+            showNotification(`模型切换失败: ${error.message}`, 'error');
+            
+            // 恢复到当前模型选择
+            modelSelector.value = currentModel;
+        } finally {
+            // 恢复按钮状态
+            switchModelBtn.disabled = false;
+            switchModelBtn.innerHTML = '<i class="fa fa-refresh mr-1"></i>切换';
         }
     }
     </script>
