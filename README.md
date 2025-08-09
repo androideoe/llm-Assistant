@@ -1,7 +1,7 @@
 # Ollama 多模型聊天助手
 
 这是一个基于Ollama和LangChain的智能聊天助手，支持多模型切换、RAG（检索增强生成）功能、思考过程显示等高级特性，通过关联本地知识库进行智能问答。
-![preview.gif](https://github.com/androideoe/llm-Assistant/blob/main/preview.gif)<br/>
+![preview.gif](https://github.com/androideoe/llm-Assistant/blob/main/preview-cc.gif)<br/>
 
 ## ✨ 功能特性
 
